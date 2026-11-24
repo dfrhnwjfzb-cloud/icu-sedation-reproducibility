@@ -1,0 +1,3 @@
+-- Public reviewer SQL: supply review_cohort(stay_id,hadm_id,subject_id,t0).
+-- The Python runner binds the same authorized keys with a VALUES CTE instead.
+WITH keys(stay_id,hadm_id,subject_id,t0) AS (SELECT stay_id,hadm_id,subject_id,t0 FROM review_cohort), c AS MATERIALIZED (SELECT k.*,i.intime,i.outtime,greatest(i.intime,k.t0-interval '24 hour') ws FROM keys k JOIN mimiciv_icu.icustays i USING(stay_id)) SELECT c.stay_id,l.labevent_id,l.specimen_id,l.itemid,l.charttime,l.storetime,l.valuenum,l.valueuom FROM c JOIN mimiciv_hosp.labevents l ON l.hadm_id=c.hadm_id AND l.subject_id=c.subject_id AND l.charttime>=c.ws AND l.charttime<c.t0 AND l.itemid IN(50912,50885,51265,50821,50816) WHERE l.valuenum IS NOT NULL;

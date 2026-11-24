@@ -1,0 +1,5 @@
+-- Public reviewer SQL: supply review_cohort(stay_id,hadm_id,subject_id,t0).
+-- The Python runner binds the same authorized keys with a VALUES CTE instead.
+WITH c(stay_id,hadm_id,subject_id,t0) AS (SELECT stay_id,hadm_id,subject_id,t0 FROM review_cohort), l AS (
+ SELECT c.stay_id, MIN(v.endtime) FILTER(WHERE v.ventilation_status='InvasiveVent' AND v.endtime>c.t0 AND v.endtime<=c.t0+interval '28 day' AND NOT EXISTS(SELECT 1 FROM mimiciv_derived.ventilation v2 WHERE v2.stay_id=c.stay_id AND v2.ventilation_status='InvasiveVent' AND v2.starttime>=v.endtime AND v2.starttime<v.endtime+interval '48 hour')) liberation FROM c LEFT JOIN mimiciv_derived.ventilation v ON v.stay_id=c.stay_id GROUP BY c.stay_id)
+ SELECT c.stay_id,CASE WHEN l.liberation IS NOT NULL AND (p.dod IS NULL OR p.dod>(c.t0+interval '28 day')::date) THEN 1 ELSE 0 END alive_sustainably_liberated_day28,a.hospital_expire_flag hospital_mortality FROM c JOIN l USING(stay_id) JOIN mimiciv_hosp.patients p ON c.subject_id=p.subject_id JOIN mimiciv_hosp.admissions a ON a.hadm_id=c.hadm_id ORDER BY c.stay_id;

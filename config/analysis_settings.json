@@ -1,0 +1,394 @@
+{
+  "CONFIGS": {
+    "availability_round2.json": {
+      "created_before_this_effect_estimation": "2026-11-22T13:24:16.871612+00:00",
+      "trigger": "A1 demonstrated charttime<t0 but storetime>=t0 in selected inputs",
+      "rule": "One fixed conservative rule: new component evidence only when every matched contributing source storetime<t0; partial/unmatched chains excluded; CNS from G1; renal from verified creatinine only",
+      "model": "Same component-median + missingness + window model as ModelM; original 84 covariates unchanged",
+      "scope": "Sensitivity of newly added severity evidence; cannot remove availability uncertainty in frozen original covariates",
+      "limitations": "Informative availability/missingness; not a true physiologic gold standard; IF CI only"
+    },
+    "round1.json": {
+      "created_before_new_effects": true,
+      "created_at": "2026-11-22T12:06:53.291535+00:00",
+      "strata": {
+        "Low": [
+          0,
+          5
+        ],
+        "Intermediate": [
+          6,
+          9
+        ],
+        "High": [
+          10,
+          24
+        ]
+      },
+      "rationale": "Fixed clinically interpretable integer score bands, pooled distribution reported separately; no threshold selected using treatment-outcome effects. Short windows and missing-zero scores limit clinical calibration.",
+      "score": "MIT-LCP component thresholds; observed pre-t0 history; absent organs explicitly zero plus missingness indicators",
+      "model_S": "Original baseline terms plus centered/scaled SOFA and SOFA squared and six organ missing indicators; constants removed",
+      "model_G": "Same augmentation using raw complete GCS components recorded and stored before t0; add raw GCS missing indicator",
+      "ridge_ps": 1.0,
+      "ridge_outcome": 2.0,
+      "folds": "row position modulo 5, exactly original implementation",
+      "sparse_warning_arm_n": 60,
+      "no_estimate_if_arm_n_below": 20,
+      "ess_warning_per_arm": 50,
+      "balance_warning_max_abs_smd": 0.1,
+      "post_hoc": true,
+      "APACHE_II": "INFEASIBLE unless all critical domains verifiable; no score/no Model A",
+      "seed": "Deterministic; no random split",
+      "source_cohort_sha256": "9e3eceaf823efcc08c72ef3e50290976dac3e92925ea56352b57c938bd75b006"
+    },
+    "round2.json": {
+      "created": "2026-11-22T12:53:24.843725+00:00",
+      "post_hoc": true,
+      "freeze_before_new_effects": true,
+      "cohort_n": 3669,
+      "primary_design": "Unchanged original cohort/t0/treatment/outcomes",
+      "groups": [
+        "Full",
+        "Low",
+        "Intermediate",
+        "High",
+        "NonCardiacCV",
+        "CardiacCV"
+      ],
+      "strata": [
+        5,
+        9
+      ],
+      "G0": "Round1 measured history, component missing-zero convention, label not complete standard SOFA",
+      "G1": "Exact-time 3 non-ETT raw components; charttime and each storetime<t0; CNS remains missing; regression index median-imputes measured CNS and adds explicit missing indicator, never declares missing normal",
+      "G2": "Component last observation carried at most 6h, each charttime/storetime<t0 and within window; observed ETT verbal invalidates verbal until later valid observation; no default normal components",
+      "missingness_sensitivity": "Six observed component scores median-imputed for regression with six missing indicators and window hours; no high-score assignment",
+      "ModelE": "Original baseline + median-imputed organs/missingness + SOFA index/quadratic + window hours/square + age square + bradycardia-by-light-awake interaction; PS ridge1, outcome ridge2",
+      "ModelW": "Same fixed basis as ModelE, PS ridge0.01, outcome ridge2; only one weaker-penalty alternative, fixed specification",
+      "model_selection": "Report both alternatives, no iterative tuning, no deletions, no threshold changes",
+      "gating": "max model+observed-organ SMD>0.1 is residual warning; ESS ratio<0.70 versus S in either arm is substantial loss; minimum ESS<50 warning; report all fitting outcomes",
+      "bootstrap": {
+        "seed": 2026112202,
+        "pilot_reps": 10,
+        "attempts_initial": 500,
+        "max_attempts_if_failures": 600,
+        "minimum_effective_reps": 500,
+        "workers": 4,
+        "models": [
+          [
+            "Full",
+            "Model0"
+          ],
+          [
+            "Full",
+            "ModelS"
+          ],
+          [
+            "NonCardiacCV",
+            "ModelS"
+          ],
+          [
+            "CardiacCV",
+            "ModelS"
+          ],
+          [
+            "High",
+            "ModelS"
+          ],
+          [
+            "High",
+            "ModelW"
+          ]
+        ],
+        "unit": "subject_id; all original stays sampled together with global patient multiplicities",
+        "folds": "Original canonical within-analysis-set row mod5 labels fixed; copies of a source stay stay in same fold; refit all outcome folds per replicate",
+        "CI": "Percentile 2.5/97.5, RD and RR; failures and out-of-range risks retained/logged; no replacing based on effect",
+        "not_covered": "Measurement error and unmeasured confounding; does not assert original IF CI is necessarily wrong"
+      }
+    },
+    "urine_round1.json": {
+      "definition": "Official urine normalization for documented 22-30 h coverage, only if entire coverage interval lies within strict pre-t0 window; NOT a fully measured 24-h volume",
+      "hours_min": 22,
+      "hours_max": 30,
+      "normalization": "urineoutput_24hr / uo_tm_24hr * 24",
+      "use": "measurement sensitivity only; primary conservative renal score unchanged"
+    },
+    "urine_round2.json": {
+      "fixed_window": "[t0-24h,t0), ICU history at least24h",
+      "first_within_hours": 1,
+      "last_within_hours": 1,
+      "minimum_span_hours": 22,
+      "maximum_internal_gap_hours": 2,
+      "volume": "Sum actual official urine_output net mL; no normalization/extrapolation",
+      "record_availability": "Every constituent raw event storetime<t0",
+      "interpretation": "Near-complete documented fixed-window sensitivity, not proof of continuous 24h measurement or standard validated urine SOFA"
+    }
+  },
+  "OFFICIAL_SQL_FILES": {
+    "firstday__first_day_sofa.sql": "45_official_firstday__first_day_sofa.sql",
+    "measurement__bg.sql": "46_official_measurement__bg.sql",
+    "measurement__chemistry.sql": "47_official_measurement__chemistry.sql",
+    "measurement__complete_blood_count.sql": "48_official_measurement__complete_blood_count.sql",
+    "measurement__enzyme.sql": "49_official_measurement__enzyme.sql",
+    "measurement__gcs.sql": "50_official_measurement__gcs.sql",
+    "measurement__urine_output.sql": "51_official_measurement__urine_output.sql",
+    "measurement__urine_output_rate.sql": "52_official_measurement__urine_output_rate.sql",
+    "measurement__vitalsign.sql": "53_official_measurement__vitalsign.sql",
+    "medication__dobutamine.sql": "54_official_medication__dobutamine.sql",
+    "medication__dopamine.sql": "55_official_medication__dopamine.sql",
+    "medication__epinephrine.sql": "56_official_medication__epinephrine.sql",
+    "medication__norepinephrine.sql": "57_official_medication__norepinephrine.sql",
+    "score__sofa.sql": "58_official_score__sofa.sql"
+  },
+  "OFFICIAL_MANIFEST": [
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/score/sofa.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "score__sofa.sql",
+      "sha256": "a2dcdfa54c7d981c6846e9afdc8492656cfa8aa85137033becec8ac5dc8c1099"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/firstday/first_day_sofa.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "firstday__first_day_sofa.sql",
+      "sha256": "e56ae4c67d7b19bf8d47f262011bcd888bdb04160b1e9ce744423243b867892e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/README.md",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "README.md",
+      "sha256": "909a0a821e36d65da1e86b2733d9cf8f2a47a5e7eb5be250e413b42c7f42cc0d"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/measurement/gcs.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "measurement__gcs.sql",
+      "sha256": "77d14660a8322928069c049cd1aa28eb8f356b7751f73eba2625358266f3039e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/measurement/bg.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "measurement__bg.sql",
+      "sha256": "90a7f58852b5af97cfce799e9e76a9754c765e2fb9593860ca6bf85b60a5cd55"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/measurement/urine_output_rate.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "measurement__urine_output_rate.sql",
+      "sha256": "2a94ace1b31094d311b32ae3256eeba0ed6ff000fb57fe30b9917de89db5d7ff"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/medication/norepinephrine.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "medication__norepinephrine.sql",
+      "sha256": "4972b33d3dce3aa0f8626f790b19d4cff033436e0910845f795c7e2a55ec1d28"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/medication/dopamine.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "medication__dopamine.sql",
+      "sha256": "4809121abcd1bd3d827a3025b7427f959dc99a53bbbee7dbe109c957145ff74d"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/medication/dobutamine.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "medication__dobutamine.sql",
+      "sha256": "7b74249ebca27705ed5e31de753189c60a27e002a50c29745ff0bffee6e27ad5"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/MIT-LCP/mimic-code/303d26c623dcc9c49cc0f204468d4acc2f063797/mimic-iv/concepts/medication/epinephrine.sql",
+      "commit": "303d26c623dcc9c49cc0f204468d4acc2f063797",
+      "file": "medication__epinephrine.sql",
+      "sha256": "97c1c3cf8c549fb7546c85c7a66902911cc217fd39fd29b3a15070e83d6a2e5a"
+    }
+  ],
+  "REQUIRED_DATABASE_COLUMNS": {
+    "mimiciv_derived.bg": [
+      "subject_id",
+      "hadm_id",
+      "charttime",
+      "specimen",
+      "pao2fio2ratio",
+      "po2",
+      "pco2",
+      "fio2",
+      "fio2_chartevents",
+      "aado2_calc",
+      "ph"
+    ],
+    "mimiciv_derived.vitalsign": [
+      "stay_id",
+      "charttime",
+      "mbp",
+      "temperature",
+      "heart_rate",
+      "resp_rate"
+    ],
+    "mimiciv_derived.chemistry": [
+      "subject_id",
+      "hadm_id",
+      "charttime",
+      "creatinine",
+      "sodium",
+      "potassium",
+      "bicarbonate"
+    ],
+    "mimiciv_derived.enzyme": [
+      "subject_id",
+      "hadm_id",
+      "charttime",
+      "bilirubin_total"
+    ],
+    "mimiciv_derived.complete_blood_count": [
+      "subject_id",
+      "hadm_id",
+      "charttime",
+      "platelet",
+      "hematocrit",
+      "wbc"
+    ],
+    "mimiciv_derived.gcs": [
+      "stay_id",
+      "charttime",
+      "gcs",
+      "gcs_motor",
+      "gcs_eyes",
+      "gcs_verbal",
+      "gcs_unable"
+    ],
+    "mimiciv_derived.urine_output_rate": [
+      "stay_id",
+      "charttime",
+      "urineoutput_6hr",
+      "urineoutput_12hr",
+      "urineoutput_24hr",
+      "uo_tm_6hr",
+      "uo_tm_12hr",
+      "uo_tm_24hr"
+    ],
+    "mimiciv_derived.urine_output": [
+      "stay_id",
+      "charttime",
+      "urineoutput"
+    ],
+    "mimiciv_derived.ventilation": [
+      "stay_id",
+      "starttime",
+      "endtime",
+      "ventilation_status"
+    ],
+    "mimiciv_icu.icustays": [
+      "stay_id",
+      "subject_id",
+      "hadm_id",
+      "intime",
+      "outtime"
+    ],
+    "mimiciv_icu.chartevents": [
+      "stay_id",
+      "subject_id",
+      "itemid",
+      "charttime",
+      "storetime",
+      "valuenum",
+      "value"
+    ],
+    "mimiciv_icu.inputevents": [
+      "stay_id",
+      "subject_id",
+      "hadm_id",
+      "itemid",
+      "starttime",
+      "endtime",
+      "storetime",
+      "rate",
+      "rateuom",
+      "patientweight",
+      "linkorderid"
+    ],
+    "mimiciv_icu.outputevents": [
+      "stay_id",
+      "subject_id",
+      "itemid",
+      "charttime",
+      "storetime",
+      "value",
+      "valueuom"
+    ],
+    "mimiciv_hosp.labevents": [
+      "subject_id",
+      "hadm_id",
+      "labevent_id",
+      "specimen_id",
+      "itemid",
+      "charttime",
+      "storetime",
+      "valuenum",
+      "valueuom"
+    ],
+    "mimiciv_hosp.admissions": [
+      "hadm_id",
+      "hospital_expire_flag",
+      "deathtime",
+      "dischtime",
+      "admission_type"
+    ],
+    "mimiciv_hosp.patients": [
+      "subject_id",
+      "dod",
+      "anchor_year_group"
+    ],
+    "mimiciv_derived.icustay_detail": [
+      "subject_id",
+      "hadm_id",
+      "stay_id",
+      "gender",
+      "admission_age",
+      "race",
+      "icu_intime",
+      "icu_outtime",
+      "first_icu_stay",
+      "hospital_expire_flag",
+      "los_icu",
+      "los_hospital",
+      "dod"
+    ],
+    "mimiciv_derived.dopamine": [
+      "stay_id",
+      "linkorderid",
+      "vaso_rate",
+      "vaso_amount",
+      "starttime",
+      "endtime"
+    ],
+    "mimiciv_derived.dobutamine": [
+      "stay_id",
+      "linkorderid",
+      "vaso_rate",
+      "vaso_amount",
+      "starttime",
+      "endtime"
+    ],
+    "mimiciv_derived.epinephrine": [
+      "stay_id",
+      "linkorderid",
+      "vaso_rate",
+      "vaso_amount",
+      "starttime",
+      "endtime"
+    ],
+    "mimiciv_derived.norepinephrine": [
+      "stay_id",
+      "linkorderid",
+      "vaso_rate",
+      "vaso_amount",
+      "starttime",
+      "endtime"
+    ]
+  },
+  "ORIGINAL_COHORT_SQL": "59_severity_frozen_cohort_source.sql",
+  "LEGACY_FILENAMES": {
+    "manuscript_fallback": "manuscript/\u82f1\u6587\u6b63\u6587.docx",
+    "paragraph_extract": "validation/\u6b63\u6587\u9010\u6bb5\u63d0\u53d6.md"
+  }
+}
